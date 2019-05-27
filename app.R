@@ -8,31 +8,30 @@ library('plyr')
 library('dplyr')
 library('tidyverse')
 library('ggplot2')
-library('rpanel')
+#library('rpanel')
 library('chron')
 library('plotly')
 library('shinythemes')
-library(ECharts2Shiny)
 library(readxl)
 library(htmlwidgets)
 library(scales)
 
-#setwd("C:/Users/aisyahzak/Desktop/Principles of Data Science/Group Project")
-Retail = read.csv("Retail.csv", stringsAsFactors = F)
+#setwd("C:/Users/aisyahzak/Desktop")
+retail = read.csv("retail.csv", stringsAsFactors = F)
 tr <- read.transactions("market_basket_type.csv", sep = ',')
 
-Retail$Total <- as.numeric(as.character(Retail$Total))
-Retail$Date <- as.Date(Retail$Date)
-data.Quantity <- aggregate(Quantity ~ Product.Type + Country + Product.Name, data=Retail, sum)
-data.Total <- aggregate(Total ~ Product.Type + Country + Product.Name, data=Retail, sum)
+retail$Total <- as.numeric(as.character(retail$Total))
+retail$Date <- as.Date(retail$Date)
+data.Quantity <- aggregate(Quantity ~ Product.Type + Country + Product.Name, data=retail, sum)
+data.Total <- aggregate(Total ~ Product.Type + Country + Product.Name, data=retail, sum)
 # merge two data frames by Product.Type and Country
 dqt <- merge(data.Quantity,data.Total,by=c("Product.Type","Country","Product.Name"))
-Retail$Time <- sort(Retail$Time, decreasing = FALSE)
-Retail$Month <- format(as.Date(Retail$Date), "%m")
+retail$Time <- sort(retail$Time, decreasing = FALSE)
+retail$Month <- format(as.Date(retail$Date), "%m")
 
 ui <- tagList(pageWithSidebar(
   
-  headerPanel("Uncover Insights: Analyzing Product Behaviour and Market Basket Analysis for Retail Industry Globally within 6 months."),
+  headerPanel("Uncover Insights: Analyzing Product Behaviour and Market Basket Analysis for retail Industry Globally within 6 months."),
   
   shinythemes::themeSelector(),
   navbarPage(
@@ -40,7 +39,7 @@ ui <- tagList(pageWithSidebar(
     "ROI: Return of Insights",
     tabPanel("Overview",
              sidebarPanel(
-               pickerInput("CountryInput1","Select Country:", choices=sort(unique(Retail$Country)), options = list(`actions-box` = TRUE),multiple = T)
+               pickerInput("CountryInput1","Select Country:", choices=sort(unique(retail$Country)), options = list(`actions-box` = TRUE),multiple = T)
              ),
              mainPanel(
                tabsetPanel(
@@ -50,8 +49,8 @@ ui <- tagList(pageWithSidebar(
     ),
     tabPanel("Time Analysis",
              sidebarPanel(
-               dateRangeInput("DateInput", sort(unique(Retail$Date)), min = min(Retail$Date), max = max(Retail$Date), range(min(Retail$Date), max(Retail$Date)), label = "Date range:"),
-               pickerInput("CountryInput","Select Country:", choices=sort(unique(Retail$Country)), options = list(`actions-box` = TRUE),multiple = T)
+               dateRangeInput("DateInput", sort(unique(retail$Date)), min = min(retail$Date), max = max(retail$Date), range(min(retail$Date), max(retail$Date)), label = "Date range:"),
+               pickerInput("CountryInput","Select Country:", choices=sort(unique(retail$Country)), options = list(`actions-box` = TRUE),multiple = T)
                
              ),
              mainPanel(
@@ -117,12 +116,12 @@ server <- function(input, output) {
   # Plot Output for Total Revenue
   
   filtered12 <- reactive({ 
-    Retail %>%
+    retail %>%
       filter (Country %in% input$CountryInput1)
     })
   
   output$overview1 <- renderPlot({
-    ggplot(filtered12(), aes(x = reorder(Retail$Country, -Total), y=Total)) +
+    ggplot(filtered12(), aes(x = Country, y=Total)) +
       geom_bar(stat = "identity", color="gold", fill="gold") + 
       theme(axis.title.x =  element_blank())+
       labs(title="Revenue based on country")+
@@ -130,7 +129,7 @@ server <- function(input, output) {
   })
 
   filtered2 <- reactive({
-    Retail %>%
+    retail %>%
       filter (Date >= input$DateInput[1],
               Date <= input$DateInput[-1],
               Country %in% input$CountryInput) %>% 
@@ -139,7 +138,7 @@ server <- function(input, output) {
   })
     
   filtered3 <- reactive({
-    Retail %>%
+    retail %>%
       filter (Date >= input$DateInput[1],
               Date <= input$DateInput[-1],
               Country %in% input$CountryInput) %>% 
@@ -149,14 +148,14 @@ server <- function(input, output) {
 
   
   filtered5 <- reactive({
-    Retail %>%
+    retail %>%
       filter (Country %in% input$CountryInput) %>% 
       group_by(Country, Month) %>% 
       summarise(Revenuebymonth = sum(Total))
   })
   
   filtered6 <- reactive({
-    Retail %>%
+    retail %>%
       filter (Country %in% input$CountryInput) %>% 
       group_by(Country, Month) %>% 
       summarise(numOfcustbymonth = n_distinct(CustomerID))
